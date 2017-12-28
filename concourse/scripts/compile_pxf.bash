@@ -2,7 +2,7 @@
 set -exo pipefail
 
 GREENPLUM_INSTALL_DIR=/usr/local/greenplum-db-devel
-GPDB_ARTIFACTS_DIR=$(pwd)/${OUTPUT_ARTIFACT_DIR}
+PXF_ARTIFACTS_DIR=$(pwd)/${OUTPUT_ARTIFACT_DIR}
 
 CWDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -15,12 +15,14 @@ function _main() {
       export BUILD_NUMBER="${TARGET_OS}"
       export PXF_HOME="${GREENPLUM_INSTALL_DIR}/pxf"
       export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
+      mkdir -p ~/.gradle
+      tar -xzf pxf_gradle_dependencies/pxf_gradle_dependencies.tar.gz -C ~/.gradle
       pushd pxf_src/pxf
           make install -s DATABASE=gpdb
       popd
       pushd ${GREENPLUM_INSTALL_DIR}
           chmod -R 755 pxf
-          tar -czf ${GPDB_ARTIFACTS_DIR}/pxf.tar.gz pxf
+          tar -czf ${PXF_ARTIFACTS_DIR}/pxf.tar.gz pxf
       popd
   fi
 }

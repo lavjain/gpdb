@@ -481,6 +481,12 @@ resources:
     repository: pivotaldata/centos-gpdb-dev
     tag: '6-gcc6.2-llvm3.7'
 
+- name: centos-pxf-dev-6
+  type: docker-image
+  source:
+    repository: pivotaldata/gpdb-dev
+    tag: centos6
+
 {% endif %}
 {% if "centos7" in os_types %}
 - name: centos-gpdb-dev-7
@@ -522,6 +528,15 @@ resources:
     region_name: {{aws-region}}
     secret_access_key: {{bucket-secret-access-key}}
     versioned_file: pxf/pxf.tar.gz
+
+- name: pxf_gradle_dependencies
+  type: s3
+  source:
+    access_key_id: {{bucket-access-key-id}}
+    bucket: {{bucket-name}}
+    region_name: {{aws-region}}
+    secret_access_key: {{bucket-secret-access-key}}
+    versioned_file: pxf/pxf_gradle_dependencies.tar.gz
 
 - name: bin_gpdb_segwalrep_centos6
   type: s3
@@ -869,6 +884,7 @@ jobs:
     - get: gpdb_src_binary_swap
       trigger: true
     - get: centos-gpdb-dev-6
+    - get: centos-pxf-dev-6
 {% endif %}
 {% if "centos7" in os_types %}
     - get: centos-gpdb-dev-7
@@ -891,18 +907,19 @@ jobs:
     - get: pxf_src
       trigger: true
       passed: [gate_compile_start]
-    - get: centos-gpdb-dev-6
+    - get: pxf_gradle_dependencies
+    - get: centos-pxf-dev-6
       passed: [gate_compile_start]
   - task: compile_pxf
     file: gpdb_src/concourse/tasks/compile_pxf.yml
-    image: centos-gpdb-dev-6
+    image: centos-pxf-dev-6
     params:
       TARGET_OS: centos
       TARGET_OS_VERSION: 6
   - aggregate:
     - put: bin_pxf
       params:
-        file: gpdb_artifacts/pxf.tar.gz
+        file: pxf_artifacts/pxf.tar.gz
 
 - name: compile_gpdb_centos6
   plan:
@@ -2839,10 +2856,10 @@ jobs:
       trigger: [[ test_trigger ]]
     - get: pxf_infra_src
       trigger: [[ test_trigger ]]
-    - get: centos-gpdb-dev-6
+    - get: centos-pxf-dev-6
   - task: regression_tests_pxf
     file: gpdb_src/concourse/tasks/regression_tests_pxf.yml
-    image: centos-gpdb-dev-6
+    image: centos-pxf-dev-6
     params:
       GROUP: {{pxf_infra_test_group}}
       HADOOP_CLIENT: [[ hadoop_platform ]]
@@ -2865,10 +2882,10 @@ jobs:
       trigger: [[ test_trigger ]]
     - get: pxf_infra_src
       trigger: [[ test_trigger ]]
-    - get: centos-gpdb-dev-6
+    - get: centos-pxf-dev-6
   - task: regression_tests_pxf
     file: gpdb_src/concourse/tasks/regression_tests_pxf.yml
-    image: centos-gpdb-dev-6
+    image: centos-pxf-dev-6
     params:
       GROUP: {{pxf_infra_test_group}}
       HADOOP_CLIENT: TAR
@@ -2885,10 +2902,10 @@ jobs:
       passed: [gate_ud_start]
       trigger: [[ test_trigger ]]
       resource: bin_gpdb_centos6
-    - get: centos-gpdb-dev-6
+    - get: centos-pxf-dev-6
   - task: regression_tests_gphdfs
     file: gpdb_src/concourse/tasks/regression_tests_gphdfs.yml
-    image: centos-gpdb-dev-6
+    image: centos-pxf-dev-6
     params:
       TARGET_OS: centos
       TARGET_OS_VERSION: 6

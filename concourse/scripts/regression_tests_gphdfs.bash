@@ -74,6 +74,7 @@ function run_regression_test() {
 
 function setup_gpadmin_user() {
 	./gpdb_src/concourse/scripts/setup_gpadmin_user.bash "$TARGET_OS"
+	echo 'export JAVA_HOME=/etc/alternatives/java_sdk' >> /home/gpadmin/.bashrc
 }
 
 function _main() {
