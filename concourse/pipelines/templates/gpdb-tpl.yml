@@ -538,6 +538,15 @@ resources:
     secret_access_key: {{bucket-secret-access-key}}
     versioned_file: pxf/pxf_gradle_dependencies.tar.gz
 
+- name: pxf_maven_dependencies
+  type: s3
+  source:
+    access_key_id: {{bucket-access-key-id}}
+    bucket: {{bucket-name}}
+    region_name: {{aws-region}}
+    secret_access_key: {{bucket-secret-access-key}}
+    versioned_file: pxf/pxf_maven_dependencies.tar.gz
+
 - name: bin_gpdb_segwalrep_centos6
   type: s3
   source:
@@ -2856,6 +2865,7 @@ jobs:
       trigger: [[ test_trigger ]]
     - get: pxf_infra_src
       trigger: [[ test_trigger ]]
+    - get: pxf_maven_dependencies
     - get: centos-pxf-dev-6
   - task: regression_tests_pxf
     file: gpdb_src/concourse/tasks/regression_tests_pxf.yml
@@ -2882,6 +2892,7 @@ jobs:
       trigger: [[ test_trigger ]]
     - get: pxf_infra_src
       trigger: [[ test_trigger ]]
+    - get: pxf_maven_dependencies
     - get: centos-pxf-dev-6
   - task: regression_tests_pxf
     file: gpdb_src/concourse/tasks/regression_tests_pxf.yml

@@ -15,8 +15,10 @@ function _main() {
       export BUILD_NUMBER="${TARGET_OS}"
       export PXF_HOME="${GREENPLUM_INSTALL_DIR}/pxf"
       export JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF8
-      mkdir -p ~/.gradle
-      tar -xzf pxf_gradle_dependencies/pxf_gradle_dependencies.tar.gz -C ~/.gradle
+      if [ -d pxf_gradle_dependencies ]; then
+          mkdir -p ~/.gradle
+          tar -xzf pxf_gradle_dependencies/pxf_gradle_dependencies.tar.gz -C ~/.gradle
+      fi
       pushd pxf_src/pxf
           make install -s DATABASE=gpdb
       popd
