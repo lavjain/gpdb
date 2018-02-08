@@ -1,5 +1,6 @@
 ------------------------------------------------------------------
 -- PXF Protocol/Formatters
+-- Revision: {{revision}}
 ------------------------------------------------------------------
 
 CREATE OR REPLACE FUNCTION pg_catalog.pxf_write() RETURNS integer
