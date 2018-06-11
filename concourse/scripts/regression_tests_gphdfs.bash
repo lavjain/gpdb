@@ -5,6 +5,8 @@ set -exo pipefail
 CWDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "${CWDIR}/common.bash"
 
+HADOOP_TARGET_VERSION=${HADOOP_TARGET_VERSION:-mpr}
+
 function gen_env(){
 	cat > /home/gpadmin/run_regression_test.sh <<-EOF
 	set -exo pipefail
@@ -38,22 +40,26 @@ function gen_env(){
 	cd "\${1}/gpdb_src/gpAux"
 	source gpdemo/gpdemo-env.sh
 
-	wget -P /tmp http://archive.apache.org/dist/hadoop/common/hadoop-2.7.3/hadoop-2.7.3.tar.gz
-	tar zxf /tmp/hadoop-2.7.3.tar.gz -C /tmp
-	export HADOOP_HOME=/tmp/hadoop-2.7.3
+	if [ "$HADOOP_TARGET_VERSION" != "mpr" ]; then
+		wget -P /tmp http://archive.apache.org/dist/hadoop/common/hadoop-2.7.3/hadoop-2.7.3.tar.gz
+		tar zxf /tmp/hadoop-2.7.3.tar.gz -C /tmp
+		export HADOOP_HOME=/tmp/hadoop-2.7.3
 
-	wget -O \${HADOOP_HOME}/share/hadoop/common/lib/parquet-hadoop-bundle-1.7.0.jar http://central.maven.org/maven2/org/apache/parquet/parquet-hadoop-bundle/1.7.0/parquet-hadoop-bundle-1.7.0.jar
-	cat > "\${HADOOP_HOME}/etc/hadoop/core-site.xml" <<-EOFF
-		<configuration>
-		<property>
-		<name>fs.defaultFS</name>
-		<value>hdfs://localhost:9000/</value>
-		</property>
-		</configuration>
-	EOFF
+		wget -O \${HADOOP_HOME}/share/hadoop/common/lib/parquet-hadoop-bundle-1.7.0.jar http://central.maven.org/maven2/org/apache/parquet/parquet-hadoop-bundle/1.7.0/parquet-hadoop-bundle-1.7.0.jar
+		cat > "\${HADOOP_HOME}/etc/hadoop/core-site.xml" <<-EOFF
+			<configuration>
+				<property>
+					<name>fs.defaultFS</name>
+					<value>hdfs://localhost:9000/</value>
+				</property>
+			</configuration>
+		EOFF
 
-	\${HADOOP_HOME}/bin/hdfs namenode -format -force
-	\${HADOOP_HOME}/sbin/start-dfs.sh
+		\${HADOOP_HOME}/bin/hdfs namenode -format -force
+		\${HADOOP_HOME}/sbin/start-dfs.sh
+	else
+		export HADOOP_HOME=/opt/mapr/hadoop/hadoop-2.7.0
+	fi
 
 	cd "\${1}/gpdb_src/gpAux/extensions/gphdfs/regression/integrate"
 	HADOOP_HOST=localhost HADOOP_PORT=9000 ./generate_gphdfs_data.sh
@@ -62,10 +68,24 @@ function gen_env(){
 	GP_HADOOP_TARGET_VERSION=hadoop HADOOP_HOST=localhost HADOOP_PORT=9000 ./run_gphdfs_regression.sh
 
 	exit 0
-	EOF
+EOF
 
 	chown gpadmin:gpadmin /home/gpadmin/run_regression_test.sh
 	chmod a+x /home/gpadmin/run_regression_test.sh
+}
+
+function start_mapr() {
+    cp /opt/mapr/hive/hive-2.1/lib/parquet-hadoop-bundle-1.8.1.jar /opt/mapr/hadoop/hadoop-2.7.0/share/hadoop/common/lib/
+    sed -i 's@#export JAVA_HOME=@export JAVA_HOME=/etc/alternatives/java_sdk@g' /opt/mapr/conf/env.sh
+    sed -i -e 's/SetAioMaxNr/#SetAioMaxNr/' -e '254,254 {s/^/#/}' /opt/mapr/initscripts/mapr-warden
+    sed -i -e '577,577 {s/^/#/}' /opt/mapr/server/configure-common.sh
+    sed -i 's/AddUdevRules(list/#AddUdevRules(list/' /opt/mapr/server/disksetup
+    /opt/mapr/server/configure.sh -C `hostname` -Z `hostname` -N maprdemo.cluster
+    sed -i '/^mapr - /d' /etc/security/limits.conf
+    mkdir -p /opt/mapr/disks && fallocate -l 10G /opt/mapr/disks/docker.disk
+    /opt/mapr/server/disksetup -F /tmp/disks
+    /opt/mapr/server/configure.sh -C `hostname -i` -Z `hostname -i` -N maprdemo.cluster
+    sed -i '/^mapr - /d' /etc/security/limits.conf
 }
 
 function run_regression_test() {
@@ -88,13 +108,13 @@ function _main() {
 		exit 1
 	fi
 
+	time setup_gpadmin_user
+	time start_mapr
 	time configure
 	sed -i s/1024/unlimited/ /etc/security/limits.d/90-nproc.conf
 	time install_gpdb
-	time setup_gpadmin_user
 	time make_cluster
 	time gen_env
-
 	time run_regression_test
 }
 
