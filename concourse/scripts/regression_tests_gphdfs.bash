@@ -78,10 +78,12 @@ function start_mapr() {
     cp /opt/mapr/hive/hive-2.1/lib/parquet-hadoop-bundle-1.8.1.jar /opt/mapr/hadoop/hadoop-2.7.0/share/hadoop/common/lib/
     sed -i 's@#export JAVA_HOME=@export JAVA_HOME=/etc/alternatives/java_sdk@g' /opt/mapr/conf/env.sh
     sed -i -e 's/SetAioMaxNr/#SetAioMaxNr/' -e '254,254 {s/^/#/}' /opt/mapr/initscripts/mapr-warden
-    sed -i -e '577,577 {s/^/#/}' /opt/mapr/server/configure-common.sh
+    sed -i -e '555,568 {s/^/#/}' -e '577,577 {s/^/#/}' /opt/mapr/server/configure-common.sh
     sed -i 's/AddUdevRules(list/#AddUdevRules(list/' /opt/mapr/server/disksetup
+    yum install -y lsof
     exit 1
     /opt/mapr/server/configure.sh -C `hostname` -Z `hostname` -N maprdemo.cluster
+    echo `hostname` > /opt/mapr/hostname
     sed -i '/^mapr - /d' /etc/security/limits.conf
     mkdir -p /opt/mapr/disks && fallocate -l 10G /opt/mapr/disks/docker.disk
     /opt/mapr/server/disksetup -F /tmp/disks
