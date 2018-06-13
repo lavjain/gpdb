@@ -80,6 +80,7 @@ function start_mapr() {
     sed -i -e 's/SetAioMaxNr/#SetAioMaxNr/' -e '254,254 {s/^/#/}' /opt/mapr/initscripts/mapr-warden
     sed -i -e '577,577 {s/^/#/}' /opt/mapr/server/configure-common.sh
     sed -i 's/AddUdevRules(list/#AddUdevRules(list/' /opt/mapr/server/disksetup
+    exit 1
     /opt/mapr/server/configure.sh -C `hostname` -Z `hostname` -N maprdemo.cluster
     sed -i '/^mapr - /d' /etc/security/limits.conf
     mkdir -p /opt/mapr/disks && fallocate -l 10G /opt/mapr/disks/docker.disk
