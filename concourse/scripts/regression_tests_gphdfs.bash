@@ -81,14 +81,14 @@ function start_mapr() {
     sed -i -e '555,568 {s/^/#/}' -e '577,577 {s/^/#/}' /opt/mapr/server/configure-common.sh
     sed -i 's/AddUdevRules(list/#AddUdevRules(list/' /opt/mapr/server/disksetup
     yum install -y lsof
-    exit 1
-    /opt/mapr/server/configure.sh -C `hostname` -Z `hostname` -N maprdemo.cluster
     echo `hostname` > /opt/mapr/hostname
+    /opt/mapr/server/configure.sh -C `hostname` -Z `hostname` -N maprdemo.cluster
     sed -i '/^mapr - /d' /etc/security/limits.conf
     mkdir -p /opt/mapr/disks && fallocate -l 10G /opt/mapr/disks/docker.disk
     /opt/mapr/server/disksetup -F /tmp/disks
     /opt/mapr/server/configure.sh -C `hostname -i` -Z `hostname -i` -N maprdemo.cluster
     sed -i '/^mapr - /d' /etc/security/limits.conf
+    sleep 150
 }
 
 function run_regression_test() {
