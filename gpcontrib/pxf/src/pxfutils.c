@@ -65,5 +65,5 @@ concat(int num_args,...)
 char *
 get_authority(void)
 {
-	return psprintf("%s:%d", PxfDefaultHost, PxfDefaultPort);
+	return psprintf("%s:%d", PXF_DEFAULT_HOST, PXF_DEFAULT_PORT);
 }
